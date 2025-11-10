@@ -78,7 +78,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'uva_smart_parking',
         'USER': 'root',
-        'PASSWORD': 'password',
+        'PASSWORD': 'J5iHhEZbvDH6zAV',
         'HOST': 'localhost',
         'PORT': '3306',
     }
