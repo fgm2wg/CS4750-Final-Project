@@ -56,6 +56,39 @@
             margin: 20px auto;
             max-width: 600px;
         }
+
+        table {
+            margin: 40px auto;
+            border-collapse: collapse;
+            width: 95%;
+            background-color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #232d4b;
+            color: white;
+            font-size: 1rem;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f6f7fb;
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        .rate {
+            color: #e57200;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -67,6 +100,37 @@
     <div class="content">
         <h2>Welcome!</h2>
         <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your trips efficiently.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Lot Name</th>
+                    <th>Hourly Rate ($)</th>
+                    <th>Day Rate ($)</th>
+                    <th>Day Window</th>
+                    <th>Evening Rate ($)</th>
+                    <th>Evening Window</th>
+                    <th>Day Max</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lot in lots %}
+                <tr>
+                    <td>{{ lot.name }}</td>
+                    <td class="rate">{{ lot.rate }}</td>
+                    <td>{{ lot.day_rate }}</td>
+                    <td>{{ lot.day_window }}</td>
+                    <td>{{ lot.eve_rate }}</td>
+                    <td>{{ lot.eve_window }}</td>
+                    <td>{{ lot.day_max }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">No lots available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>

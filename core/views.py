@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect
 from django.db import connection
 from django.contrib import messages
@@ -8,7 +9,35 @@ def home(request):
     if "user_id" not in request.session:
         return redirect("login")
 
-    return render(request, "core/home.html")
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT name, hourly_rate, hours_json
+            FROM lot
+            ORDER BY name;
+        """)
+        rows = cursor.fetchall()
+
+    lots = []
+    for name, rate, hours_raw in rows:
+        try:
+            data = json.loads(hours_raw)
+        except (TypeError, json.JSONDecodeError):
+            data = {}
+
+        # Extract values safely
+        lot_info = {
+            "name": name,
+            "rate": rate,
+            "day_rate": data.get("day_rate", "—"),
+            "day_window": data.get("day_window", "—"),
+            "eve_rate": data.get("eve_rate", data.get("evening_rate", "—")),
+            "eve_window": data.get("eve_window", "—"),
+            "day_max": data.get("day_max", "—"),
+            "day_note": data.get("day_note", "—"),
+        }
+        lots.append(lot_info)
+
+    return render(request, "core/home.html", {"lots": lots})
 
 
 def login(request):
