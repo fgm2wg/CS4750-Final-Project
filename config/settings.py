@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-q%*1ik7=h5&mnaegbz!#8x(c7m+6_ac!%7((8besu@92bmyz2o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -76,10 +76,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'uva_smart_parking',
-        'USER': 'root',
-        'PASSWORD': 'password',
-        'HOST': 'localhost',
+        'NAME': '', # computing_id
+        'USER': '', # computing_id
+        'PASSWORD': 'J5iHhEZbvDH6zAV',
+        'HOST': 'mysql01.cs.virginia.edu',
         'PORT': '3306',
     }
 }
