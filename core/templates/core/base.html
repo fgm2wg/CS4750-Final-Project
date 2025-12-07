@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}UVA Smart Parking{% endblock %}</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9fafc;
+            color: #232d4b;
+            margin: 0;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #232d4b;
+            padding: 10px 20px;
+            color: white;
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            background-color: #e57200;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #cc6600;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="navbar">
+    <h1>UVA Smart Parking</h1>
+    <div class="nav-buttons">
+        <a href="{% url 'home' %}" class="button" title="Home"><i class="fa-solid fa-house"></i></a>
+        <a href="{% url 'vehicles' %}" class="button" title="Vehicles"><i class="fa-solid fa-car"></i></a>
+        <a href="{% url 'profile' %}" class="button" title="Profile"><i class="fa-solid fa-user"></i></a>
+        <a href="{% url 'logout' %}" class="button" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+</div>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>
