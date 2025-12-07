@@ -13,25 +13,29 @@
             align-items: center;
             height: 100vh;
         }
+
         .container {
             background: white;
             padding: 40px;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             width: 360px;
             text-align: center;
         }
+
         h1 {
             margin-bottom: 24px;
             color: #232d4b;
         }
-        input {
+
+        input, select {
             width: 90%;
             padding: 10px;
             margin: 10px 0;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+
         button {
             background-color: #e57200;
             color: white;
@@ -42,38 +46,55 @@
             cursor: pointer;
             transition: background 0.3s;
         }
+
         button:hover {
             background-color: #cc6600;
         }
+
         .error {
             color: red;
             margin-top: 10px;
         }
+
         .success {
             color: green;
             margin-top: 10px;
         }
+
         a {
             color: #232d4b;
             text-decoration: none;
         }
+
+        .guest-btn {
+            background-color: #444;
+        }
+
+        .guest-btn:hover {
+            background-color: #222;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>UVA Smart Parking</h1>
-        <form method="POST">
-            {% csrf_token %}
-            <input type="email" name="email" placeholder="Email" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Login</button>
-        </form>
+<div class="container">
+    <h1>UVA Smart Parking</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit">Login</button>
+    </form>
 
-        {% for message in messages %}
-            <p class="{{ message.tags }}">{{ message }}</p>
-        {% endfor %}
+    <form method="POST" action="{% url 'guest_login' %}">
+        {% csrf_token %}
+        <button type="submit" class="guest-btn">Continue as Guest</button>
+    </form>
 
-        <p style="margin-top:15px;">Don’t have an account? <a href="{% url 'signup' %}">Sign up</a></p>
-    </div>
+    {% for message in messages %}
+    <p class="{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+
+    <p style="margin-top:15px;">Don’t have an account? <a href="{% url 'signup' %}">Sign up</a></p>
+</div>
 </body>
 </html>

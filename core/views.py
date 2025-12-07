@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.db import connection
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
+import uuid
 
 
 def home(request):
@@ -50,17 +51,43 @@ def login(request):
 
         if row:
             user_id, password_hash = row
-
             if check_password(password, password_hash):
                 request.session["user_id"] = user_id
+                request.session["user_role"] = "REGISTERED"
                 messages.success(request, "Login successful.")
                 return redirect("home")
             else:
                 messages.error(request, "Invalid password.")
         else:
             messages.error(request, "Email not found.")
-
     return render(request, "core/login.html")
+
+
+def guest_login(request):
+    request.session.flush()
+
+    random_suffix = str(uuid.uuid4())[:8]
+    guest_email = f"guest_{random_suffix}@guest.local"
+    guest_phone = "0000000000"
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            INSERT INTO user (first_name, last_name, email, phone_usa, password_hash)
+            VALUES (%s, %s, %s, %s, %s)
+        """, ["Guest", f"Visitor{random_suffix}", guest_email, guest_phone, "GUEST"])
+
+        new_user_id = cursor.lastrowid
+
+        cursor.execute("""
+            INSERT INTO visitor (user_id, affiliation_note)
+            VALUES (%s, %s)
+        """, [new_user_id, "Guest access – not a UVA-affiliated account"])
+
+    request.session["user_id"] = new_user_id
+    request.session["user_role"] = "VISITOR"
+
+    messages.success(request, "You are logged in as a guest.")
+    return redirect("home")
 
 
 def signup(request):
@@ -70,9 +97,10 @@ def signup(request):
         email = request.POST.get("email")
         phone = request.POST.get("phone")
         password = request.POST.get("password")
+        role = request.POST.get("role")
 
-        if not all([first_name, last_name, email, phone, password]):
-            messages.error(request, "All fields are required.")
+        if not all([first_name, last_name, email, phone, password, role]):
+            messages.error(request, "All fields including role are required.")
             return render(request, "core/signup.html")
 
         password_hash = make_password(password)
@@ -83,6 +111,24 @@ def signup(request):
                     INSERT INTO user (first_name, last_name, email, phone_usa, password_hash)
                     VALUES (%s, %s, %s, %s, %s)
                 """, [first_name, last_name, email, phone, password_hash])
+                user_id = cursor.lastrowid
+
+                if role == "STUDENT":
+                    uva_id = request.POST.get("uva_student_id")
+                    level = request.POST.get("level")
+                    school = request.POST.get("school")
+                    cursor.execute("""
+                        INSERT INTO student(user_id, uva_student_id, level, school)
+                        VALUES (%s, %s, %s, %s)
+                    """, [user_id, uva_id, level, school])
+                elif role == "EMPLOYEE":
+                    emp_id = request.POST.get("employee_id")
+                    dept = request.POST.get("department")
+                    title = request.POST.get("title")
+                    cursor.execute("""
+                        INSERT INTO employee(user_id, employee_id, department, title)
+                        VALUES (%s, %s, %s, %s)
+                    """, [user_id, emp_id, dept, title])
 
             messages.success(request, "Account created successfully! Please login.")
             return redirect("login")
@@ -108,13 +154,31 @@ def profile(request):
 
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT first_name, last_name, email, phone_usa
-            FROM user
-            WHERE user_id = %s
+            SELECT u.first_name, u.last_name, u.email, u.phone_usa,
+                   s.uva_student_id, s.level, s.school,
+                   e.employee_id, e.department, e.title,
+                   v.affiliation_note
+            FROM user u
+            LEFT JOIN student s ON u.user_id = s.user_id
+            LEFT JOIN employee e ON u.user_id = e.user_id
+            LEFT JOIN visitor v ON u.user_id = v.user_id
+            WHERE u.user_id = %s
         """, [request.session["user_id"]])
-        row = cursor.fetchone()
+        user_row = cursor.fetchone()
 
-    return render(request, "core/profile.html", {"user": row})
+    if not user_row:
+        messages.error(request, "User not found.")
+        return redirect("login")
+
+    role = "Student" if user_row[4] else "Employee" if user_row[7] else "Visitor"
+
+    return render(request, "core/profile.html", {
+        "user": user_row,
+        "role": role,
+        "modal_open": False,
+        "new_password_value": "",
+        "confirm_password_value": ""
+    })
 
 
 def delete_account(request):
@@ -186,6 +250,7 @@ def change_password(request):
         "new_password_value": new_password_value,
         "confirm_password_value": confirm_password_value
     })
+
 
 def vehicles(request):
     if "user_id" not in request.session:

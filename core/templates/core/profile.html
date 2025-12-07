@@ -113,20 +113,34 @@
 <h2>Your Profile</h2>
 
 {% if messages %}
-    {% for message in messages %}
-        {% if message.tags == 'success' %}
-            <div class="alert alert-success">{{ message }}</div>
-        {% endif %}
-    {% endfor %}
+{% for message in messages %}
+{% if message.tags == 'success' %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% endfor %}
 {% endif %}
 
 {% if user %}
+{% if role == "Visitor" %}
+<ul class="profile-list">
+    <li><span class="label">Role:</span> {{ role }}</li>
+    <li><span class="label">Affiliation Note:</span> {{ user.10 }}</li>
+</ul>
+{% else %}
 <ul class="profile-list">
     <li><span class="label">Name:</span> {{ user.0 }} {{ user.1 }}</li>
     <li><span class="label">Email:</span> {{ user.2 }}</li>
     <li><span class="label">Phone:</span>
         ({{ user.3|slice:"0:3" }}) {{ user.3|slice:"3:6" }}-{{ user.3|slice:"6:" }}
     </li>
+    <li><span class="label">Role:</span> {{ role }}</li>
+    {% if role == "Student" %}
+    <li><span class="label">Level:</span> {{ user.5 }}</li>
+    <li><span class="label">School:</span> {{ user.6 }}</li>
+    {% elif role == "Employee" %}
+    <li><span class="label">Department:</span> {{ user.8 }}</li>
+    <li><span class="label">Title:</span> {{ user.9 }}</li>
+    {% endif %}
 </ul>
 
 <div class="profile-actions">
@@ -141,21 +155,21 @@
         </button>
     </form>
 </div>
-
+{% endif %}
 {% else %}
 <p class="empty-message">No user profile found.</p>
 {% endif %}
 
-<div id="changePasswordModal" class="modal" {% if modal_open %}style="display:block"{% endif %}>
+<div id="changePasswordModal" class="modal" {% if modal_open %}style="display:block" {% endif %}>
     <div class="modal-content">
         <h3>Change Password</h3>
 
         {% if messages %}
-            {% for message in messages %}
-                {% if message.tags != 'success' %}
-                    <div class="alert alert-error">{{ message }}</div>
-                {% endif %}
-            {% endfor %}
+        {% for message in messages %}
+        {% if message.tags != 'success' %}
+        <div class="alert alert-error">{{ message }}</div>
+        {% endif %}
+        {% endfor %}
         {% endif %}
 
         <form method="POST" action="{% url 'change_password' %}">
@@ -180,23 +194,23 @@
 
 {% block extra_scripts %}
 <script>
-function openChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'block';
-}
-
-function closeChangePasswordModal() {
-    document.getElementById('changePasswordModal').style.display = 'none';
-}
-
-window.onclick = function (event) {
-    const modal = document.getElementById('changePasswordModal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
+    function openChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'block';
     }
-}
 
-function confirmDelete() {
-    return confirm('Are you sure you want to delete your account? This action cannot be undone.');
-}
+    function closeChangePasswordModal() {
+        document.getElementById('changePasswordModal').style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        const modal = document.getElementById('changePasswordModal');
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function confirmDelete() {
+        return confirm('Are you sure you want to delete your account? This action cannot be undone.');
+    }
 </script>
 {% endblock %}
