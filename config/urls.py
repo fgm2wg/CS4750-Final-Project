@@ -4,6 +4,9 @@ from core import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("login/", views.login, name="login"),
-    path("sign_up/", views.sign_up, name="sign_up"),
+    path("signup/", views.signup, name="signup"),
     path("logout/", views.logout, name="logout"),
+    path("profile/", views.profile, name="profile"),
+    path('delete-account/', views.delete_account, name='delete_account'),
+    path("change-password/", views.change_password, name="change_password"),
 ]

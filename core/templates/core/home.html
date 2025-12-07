@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <meta charset="UTF-8">
     <title>UVA Smart Parking</title>
     <style>
@@ -25,7 +26,12 @@
             margin: 0;
         }
 
-        .logout-button {
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
             background-color: #e57200;
             color: white;
             border: none;
@@ -37,7 +43,7 @@
             transition: background-color 0.3s ease;
         }
 
-        .logout-button:hover {
+        .button:hover {
             background-color: #cc6600;
         }
 
@@ -92,45 +98,50 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>UVA Smart Parking</h1>
-        <a href="{% url 'logout' %}" class="logout-button">Logout</a>
-    </div>
+<div class="navbar">
+    <h1>UVA Smart Parking</h1>
 
-    <div class="content">
-        <h2>Welcome!</h2>
-        <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your trips efficiently.</p>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Lot Name</th>
-                    <th>Hourly Rate ($)</th>
-                    <th>Day Rate ($)</th>
-                    <th>Day Window</th>
-                    <th>Evening Rate ($)</th>
-                    <th>Evening Window</th>
-                    <th>Day Max</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lot in lots %}
-                <tr>
-                    <td>{{ lot.name }}</td>
-                    <td class="rate">{{ lot.rate }}</td>
-                    <td>{{ lot.day_rate }}</td>
-                    <td>{{ lot.day_window }}</td>
-                    <td>{{ lot.eve_rate }}</td>
-                    <td>{{ lot.eve_window }}</td>
-                    <td>{{ lot.day_max }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7">No lots available</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="nav-buttons">
+        <a href="{% url 'profile' %}" class="button" title="Profile"><i class="fa-solid fa-user"></i></a>
+        <a href="{% url 'logout' %}" class="button" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
     </div>
+</div>
+
+<div class="content">
+    <h2>Welcome!</h2>
+    <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your
+        trips efficiently.</p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Lot Name</th>
+            <th>Hourly Rate ($)</th>
+            <th>Day Rate ($)</th>
+            <th>Day Window</th>
+            <th>Evening Rate ($)</th>
+            <th>Evening Window</th>
+            <th>Day Max</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for lot in lots %}
+        <tr>
+            <td>{{ lot.name }}</td>
+            <td class="rate">{{ lot.rate }}</td>
+            <td>{{ lot.day_rate }}</td>
+            <td>{{ lot.day_window }}</td>
+            <td>{{ lot.eve_rate }}</td>
+            <td>{{ lot.eve_window }}</td>
+            <td>{{ lot.day_max }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No lots available</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
 </body>
 </html>
