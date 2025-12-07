@@ -1,0 +1,203 @@
+{% extends "core/base.html" %}
+
+{% block title %}Vehicles - UVA Smart Parking{% endblock %}
+
+{% block extra_head %}
+<style>
+    .container {
+        max-width: 800px;
+        margin: 60px auto;
+        background: white;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        border: 1px solid #e0e0e0;
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background: #232d4b;
+        color: white;
+    }
+
+    tr:nth-child(even) {
+        background: #f6f7fb;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background: #fff;
+        margin: 10% auto;
+        padding: 20px 30px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        text-align: center;
+    }
+
+    .modal-content input {
+        width: 90%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .modal-buttons {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2>Your Vehicles</h2>
+<button class="button" onclick="openModal('add')"><i class="fa-solid fa-plus"></i> Add Vehicle</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nickname</th>
+            <th>Plate</th>
+            <th>State</th>
+            <th>Make</th>
+            <th>Model</th>
+            <th>Color</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in vehicles %}
+        <tr>
+            <td>{{ v.6 }}</td>
+            <td>{{ v.1 }}</td>
+            <td>{{ v.2 }}</td>
+            <td>{{ v.3 }}</td>
+            <td>{{ v.4 }}</td>
+            <td>{{ v.5 }}</td>
+            <td>
+                <button class="button"
+                        onclick="openEditModal({{ v.0 }}, '{{ v.1 }}', '{{ v.2 }}', '{{ v.3 }}', '{{ v.4 }}', '{{ v.5 }}', '{{ v.6 }}')">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="button" style="background:#d9534f;" onclick="openDeleteModal({{ v.0 }}, '{{ v.6 }}')">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">No vehicles registered.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="vehicleModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle"></h3>
+        <form method="POST" id="vehicleForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="modalAction">
+            <input type="hidden" name="vehicle_id" id="vehicleId">
+            <input type="text" name="nickname" placeholder="Nickname" id="nickname"><br>
+            <input type="text" name="plate" placeholder="Plate" id="plate" required><br>
+            <input type="text" name="state" placeholder="State" maxlength="2" id="state" required><br>
+            <input type="text" name="make" placeholder="Make" id="make"><br>
+            <input type="text" name="model" placeholder="Model" id="model"><br>
+            <input type="text" name="color" placeholder="Color" id="color"><br>
+            <div class="modal-buttons">
+                <button type="submit" class="button">Save</button>
+                <button type="button" class="button" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Delete Vehicle</h3>
+        <p id="deleteText"></p>
+        <form method="POST" id="deleteForm">{% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="vehicle_id" id="deleteVehicleId">
+            <div class="modal-buttons">
+                <button type="submit" class="button" style="background:#d9534f;">Delete</button>
+                <button type="button" class="button" onclick="closeDeleteModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openModal(action) {
+        document.getElementById('modalAction').value = action;
+        document.getElementById('modalTitle').innerText = action.charAt(0).toUpperCase() + action.slice(1) + " Vehicle";
+        document.getElementById('vehicleForm').reset();
+        document.getElementById('vehicleModal').style.display = 'block';
+    }
+
+    function openEditModal(id, plate, state, make, model, color, nickname) {
+        openModal('edit');
+        document.getElementById('vehicleId').value = id;
+        document.getElementById('plate').value = plate;
+        document.getElementById('state').value = state;
+        document.getElementById('make').value = make;
+        document.getElementById('model').value = model;
+        document.getElementById('color').value = color;
+        document.getElementById('nickname').value = nickname;
+    }
+
+    function closeModal() {
+        document.getElementById('vehicleModal').style.display = 'none';
+    }
+
+    function openDeleteModal(id, nickname) {
+        document.getElementById('deleteVehicleId').value = id;
+        document.getElementById('deleteText').innerText = `Delete vehicle "${nickname}"?`;
+        document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target === document.getElementById('vehicleModal')) closeModal();
+        if (event.target === document.getElementById('deleteModal')) closeDeleteModal();
+    }
+
+    {% if modal_open == "add" %}
+        openModal('add');
+    {% elif modal_open == "edit" and vehicle_to_edit %}
+        openEditModal(
+            {{ vehicle_to_edit.0 }}, '{{ vehicle_to_edit.1 }}', '{{ vehicle_to_edit.2 }}', '{{ vehicle_to_edit.3 }}',
+            '{{ vehicle_to_edit.4 }}', '{{ vehicle_to_edit.5 }}', '{{ vehicle_to_edit.6 }}'
+        );
+    {% endif %}
+</script>
+{% endblock %}

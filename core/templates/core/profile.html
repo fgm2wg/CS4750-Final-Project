@@ -1,211 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <meta charset="UTF-8">
-    <title>Your Profile</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9fafc;
-            color: #232d4b;
-            margin: 0;
-        }
+{% extends "core/base.html" %}
 
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #232d4b;
-            padding: 10px 20px;
-            color: white;
-        }
+{% block title %}Your Profile - UVA Smart Parking{% endblock %}
 
-        .navbar h1 {
-            font-size: 1.5rem;
-            margin: 0;
-        }
+{% block extra_head %}
+<style>
+    .container {
+        max-width: 700px;
+        margin: 60px auto;
+        background: white;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-        .nav-buttons {
-            display: flex;
-            gap: 10px;
-        }
+    h2 {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 30px;
+    }
 
-        .button {
-            background-color: #e57200;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
-            border: none;
-            outline: none;
-            cursor: pointer;
-        }
+    .profile-list {
+        list-style: none;
+        padding: 0;
+        font-size: 1.1rem;
+    }
 
-        .button:hover {
-            background-color: #cc6600;
-        }
+    .profile-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
 
-        .container {
-            max-width: 700px;
-            margin: 60px auto;
-            background: white;
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+    .profile-list li:last-child {
+        border-bottom: none;
+    }
 
-        h2 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 30px;
-        }
+    .label {
+        font-weight: bold;
+        color: #232d4b;
+    }
 
-        .profile-list {
-            list-style: none;
-            padding: 0;
-            font-size: 1.1rem;
-        }
+    .profile-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+    }
 
-        .profile-list li {
-            padding: 12px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
+    .profile-actions .button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-        .profile-list li:last-child {
-            border-bottom: none;
-        }
+    .alert {
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
 
-        .label {
-            font-weight: bold;
-            color: #232d4b;
-        }
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
 
-        .profile-actions {
-            margin-top: 30px;
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
+    .alert-error {
+        color: #721c24;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
 
-        .profile-actions .button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
 
-        .alert {
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
+    .modal-content {
+        background-color: #fff;
+        margin: 15% auto;
+        padding: 30px 40px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        text-align: center;
+    }
 
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-        }
+    .modal-content input {
+        width: 90%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
 
-        .alert-error {
-            color: #721c24;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-        }
+    .modal-buttons {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+    }
+</style>
+{% endblock %}
 
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
+{% block content %}
+<h2>Your Profile</h2>
 
-        .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 30px 40px;
-            border-radius: 12px;
-            width: 400px;
-            max-width: 90%;
-            text-align: center;
-        }
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
 
-        .modal-content input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
+{% if user %}
+<ul class="profile-list">
+    <li><span class="label">Name:</span> {{ user.0 }} {{ user.1 }}</li>
+    <li><span class="label">Email:</span> {{ user.2 }}</li>
+    <li><span class="label">Phone:</span>
+        ({{ user.3|slice:"0:3" }}) {{ user.3|slice:"3:6" }}-{{ user.3|slice:"6:" }}
+    </li>
+</ul>
 
-        .modal-content .modal-buttons {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
+<div class="profile-actions">
+    <button class="button" onclick="openChangePasswordModal()">
+        <i class="fa-solid fa-key"></i> Change Password
+    </button>
 
-        .modal-content .button {
-            padding: 8px 16px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-<div class="navbar">
-    <h1>UVA Smart Parking</h1>
-    <div class="nav-buttons">
-        <a href="{% url 'home' %}" class="button" title="Home"><i class="fa-solid fa-house"></i></a>
-        <a href="{% url 'logout' %}" class="button" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
-    </div>
-</div>
-
-<div class="container">
-    <h2>Your Profile</h2>
-
-    {% if messages %}
-        {% for message in messages %}
-            {% if message.tags == 'success' %}
-                <div class="alert alert-success">{{ message }}</div>
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-
-    {% if user %}
-    <ul class="profile-list">
-        <li><span class="label">Name:</span> {{ user.0 }} {{ user.1 }}</li>
-        <li><span class="label">Email:</span> {{ user.2 }}</li>
-        <li><span class="label">Phone:</span>
-            ({{ user.3|slice:"0:3" }}) {{ user.3|slice:"3:6" }}-{{ user.3|slice:"6:" }}
-        </li>
-    </ul>
-
-    <div class="profile-actions">
-        <button class="button" onclick="openChangePasswordModal()">
-            <i class="fa-solid fa-key"></i> Change Password
+    <form method="POST" action="{% url 'delete_account' %}" onsubmit="return confirmDelete()">
+        {% csrf_token %}
+        <button type="submit" class="button" style="background-color:#d9534f;">
+            <i class="fa-solid fa-trash"></i> Delete Account
         </button>
-
-        <form method="POST" action="{% url 'delete_account' %}" onsubmit="return confirmDelete()">
-            {% csrf_token %}
-            <button type="submit" class="button" style="background-color:#d9534f;">
-                <i class="fa-solid fa-trash"></i> Delete Account
-            </button>
-        </form>
-    </div>
-
-    {% else %}
-    <p class="empty-message">No user profile found.</p>
-    {% endif %}
+    </form>
 </div>
 
-<div id="changePasswordModal" class="modal" {% if modal_open %}style="display:block" {% endif %}>
+{% else %}
+<p class="empty-message">No user profile found.</p>
+{% endif %}
+
+<div id="changePasswordModal" class="modal" {% if modal_open %}style="display:block"{% endif %}>
     <div class="modal-content">
         <h3>Change Password</h3>
 
@@ -228,34 +169,34 @@
             <br>
             <div class="modal-buttons">
                 <button type="submit" class="button"><i class="fa-solid fa-check"></i> Submit</button>
-                <button type="button" class="button" onclick="closeChangePasswordModal()"><i
-                        class="fa-solid fa-xmark"></i> Cancel
+                <button type="button" class="button" onclick="closeChangePasswordModal()">
+                    <i class="fa-solid fa-xmark"></i> Cancel
                 </button>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
-    function openChangePasswordModal() {
-        document.getElementById('changePasswordModal').style.display = 'block';
-    }
+function openChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'block';
+}
 
-    function closeChangePasswordModal() {
-        document.getElementById('changePasswordModal').style.display = 'none';
-    }
+function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'none';
+}
 
-    window.onclick = function (event) {
-        const modal = document.getElementById('changePasswordModal');
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
+window.onclick = function (event) {
+    const modal = document.getElementById('changePasswordModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
     }
+}
 
-    function confirmDelete() {
-        return confirm('Are you sure you want to delete your account? This action cannot be undone.');
-    }
+function confirmDelete() {
+    return confirm('Are you sure you want to delete your account? This action cannot be undone.');
+}
 </script>
-
-</body>
-</html>
+{% endblock %}

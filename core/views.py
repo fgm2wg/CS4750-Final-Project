@@ -24,7 +24,6 @@ def home(request):
         except (TypeError, json.JSONDecodeError):
             data = {}
 
-        # Extract values safely
         lot_info = {
             "name": name,
             "rate": rate,
@@ -186,4 +185,81 @@ def change_password(request):
         "modal_open": modal_open,
         "new_password_value": new_password_value,
         "confirm_password_value": confirm_password_value
+    })
+
+def vehicles(request):
+    if "user_id" not in request.session:
+        return redirect("login")
+
+    modal_open = None
+    vehicle_to_edit = None
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        plate = request.POST.get("plate", "").upper()
+        state = request.POST.get("state", "").upper()
+        make = request.POST.get("make")
+        model = request.POST.get("model")
+        color = request.POST.get("color")
+        nickname = request.POST.get("nickname")
+        vehicle_id = request.POST.get("vehicle_id")
+
+        try:
+            with connection.cursor() as cursor:
+                if action == "add":
+                    if not plate or not state:
+                        messages.error(request, "Plate and state are required.")
+                        modal_open = "add"
+                    else:
+                        cursor.execute("""
+                            INSERT INTO vehicle (user_id, plate, state, make, model, color, nickname)
+                            VALUES (%s,%s,%s,%s,%s,%s,%s)
+                        """, [request.session["user_id"], plate, state, make, model, color, nickname])
+                        messages.success(request, "Vehicle added successfully.")
+
+                elif action == "edit":
+                    if not plate or not state:
+                        messages.error(request, "Plate and state are required.")
+                        modal_open = "edit"
+                        vehicle_to_edit = (vehicle_id, plate, state, make, model, color, nickname)
+                    else:
+                        cursor.execute("""
+                            UPDATE vehicle
+                            SET plate=%s, state=%s, make=%s, model=%s, color=%s, nickname=%s
+                            WHERE vehicle_id=%s AND user_id=%s
+                        """, [plate, state, make, model, color, nickname, vehicle_id, request.session["user_id"]])
+                        messages.success(request, "Vehicle updated successfully.")
+
+                elif action == "delete":
+                    cursor.execute("""
+                        DELETE FROM vehicle WHERE vehicle_id=%s AND user_id=%s
+                    """, [vehicle_id, request.session["user_id"]])
+                    messages.success(request, "Vehicle deleted successfully.")
+        except Exception as e:
+            if "Duplicate entry" in str(e):
+                messages.error(request, "A vehicle with this plate and state already exists.")
+                if action in ("add", "edit"):
+                    modal_open = action
+                    if action == "edit":
+                        vehicle_to_edit = (vehicle_id, plate, state, make, model, color, nickname)
+            else:
+                messages.error(request, f"Error: {e}")
+                if action in ("add", "edit"):
+                    modal_open = action
+                    if action == "edit":
+                        vehicle_to_edit = (vehicle_id, plate, state, make, model, color, nickname)
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT vehicle_id, plate, state, make, model, color, nickname
+            FROM vehicle
+            WHERE user_id = %s
+            ORDER BY nickname, plate
+        """, [request.session["user_id"]])
+        vehicles_list = cursor.fetchall()
+
+    return render(request, "core/vehicles.html", {
+        "vehicles": vehicles_list,
+        "modal_open": modal_open,
+        "vehicle_to_edit": vehicle_to_edit
     })

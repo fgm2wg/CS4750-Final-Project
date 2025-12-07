@@ -1,147 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <meta charset="UTF-8">
-    <title>UVA Smart Parking</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f9fafc;
-            color: #232d4b;
-            margin: 0;
-        }
+{% extends "core/base.html" %}
 
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #232d4b;
-            padding: 10px 20px;
-            color: white;
-        }
+{% block title %}Home - UVA Smart Parking{% endblock %}
 
-        .navbar h1 {
-            font-size: 1.5rem;
-            margin: 0;
-        }
+{% block extra_head %}
+<style>
+    .content {
+        text-align: center;
+        padding: 40px 20px 20px 20px;
+    }
 
-        .nav-buttons {
-            display: flex;
-            gap: 10px;
-        }
+    .content h2 {
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
 
-        .button {
-            background-color: #e57200;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            text-decoration: none;
-            transition: background-color 0.3s ease;
-        }
+    .content p {
+        font-size: 1.2rem;
+        margin: 20px auto;
+        max-width: 600px;
+    }
 
-        .button:hover {
-            background-color: #cc6600;
-        }
+    .wide-table {
+        width: 95%;
+        margin: 40px auto;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        .content {
-            text-align: center;
-            padding: 80px 20px 20px 20px;
-        }
+    .wide-table th, .wide-table td {
+        border: 1px solid #e0e0e0;
+        padding: 10px;
+        text-align: center;
+    }
 
-        .content h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
+    .wide-table th {
+        background-color: #232d4b;
+        color: white;
+        font-size: 1rem;
+    }
 
-        .content p {
-            font-size: 1.2rem;
-            margin: 20px auto;
-            max-width: 600px;
-        }
+    .wide-table tr:nth-child(even) {
+        background-color: #f6f7fb;
+    }
 
-        table {
-            margin: 40px auto;
-            border-collapse: collapse;
-            width: 95%;
-            background-color: white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
+    .wide-table td {
+        font-size: 0.95rem;
+    }
 
-        th, td {
-            border: 1px solid #e0e0e0;
-            padding: 10px;
-            text-align: center;
-        }
+    .rate {
+        color: #e57200;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
 
-        th {
-            background-color: #232d4b;
-            color: white;
-            font-size: 1rem;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f6f7fb;
-        }
-
-        td {
-            font-size: 0.95rem;
-        }
-
-        .rate {
-            color: #e57200;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-<div class="navbar">
-    <h1>UVA Smart Parking</h1>
-
-    <div class="nav-buttons">
-        <a href="{% url 'profile' %}" class="button" title="Profile"><i class="fa-solid fa-user"></i></a>
-        <a href="{% url 'logout' %}" class="button" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
-    </div>
-</div>
-
+{% block content %}
 <div class="content">
     <h2>Welcome!</h2>
-    <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your
-        trips efficiently.</p>
+    <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your trips efficiently.</p>
 
-    <table>
+    <table class="wide-table">
         <thead>
-        <tr>
-            <th>Lot Name</th>
-            <th>Hourly Rate ($)</th>
-            <th>Day Rate ($)</th>
-            <th>Day Window</th>
-            <th>Evening Rate ($)</th>
-            <th>Evening Window</th>
-            <th>Day Max</th>
-        </tr>
+            <tr>
+                <th>Lot Name</th>
+                <th>Hourly Rate ($)</th>
+                <th>Day Rate ($)</th>
+                <th>Day Window</th>
+                <th>Evening Rate ($)</th>
+                <th>Evening Window</th>
+                <th>Day Max</th>
+            </tr>
         </thead>
         <tbody>
-        {% for lot in lots %}
-        <tr>
-            <td>{{ lot.name }}</td>
-            <td class="rate">{{ lot.rate }}</td>
-            <td>{{ lot.day_rate }}</td>
-            <td>{{ lot.day_window }}</td>
-            <td>{{ lot.eve_rate }}</td>
-            <td>{{ lot.eve_window }}</td>
-            <td>{{ lot.day_max }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="7">No lots available</td>
-        </tr>
-        {% endfor %}
+            {% for lot in lots %}
+            <tr>
+                <td>{{ lot.name }}</td>
+                <td class="rate">{{ lot.rate }}</td>
+                <td>{{ lot.day_rate }}</td>
+                <td>{{ lot.day_window }}</td>
+                <td>{{ lot.eve_rate }}</td>
+                <td>{{ lot.eve_window }}</td>
+                <td>{{ lot.day_max }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7">No lots available</td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
-</body>
-</html>
+{% endblock %}
