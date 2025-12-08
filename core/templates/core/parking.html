@@ -8,12 +8,13 @@
     <h2 style="text-align:center;margin-bottom:20px;">Parking</h2>
 
     {% for message in messages %}
-        <div style="margin-bottom:10px;color:green;font-weight:bold;">
+        <div style="margin-bottom:10px;font-weight:bold;">
             {{ message }}
         </div>
     {% endfor %}
 
     {% if active_session %}
+        <!-- Show current active session -->
         <div style="margin-bottom:20px;padding:15px;background:#f6f7fb;border-radius:8px;">
             <p>
                 You are currently parked in
@@ -21,7 +22,7 @@
                 with
                 <strong>{{ active_session.vehicle_nickname }}</strong>
                 since
-                <strong>{{ active_session.start_ts }}</strong>
+                <strong>{{ active_session.start_ts }}</strong>.
             </p>
 
             <form method="POST">
@@ -35,6 +36,8 @@
         </div>
 
     {% else %}
+        <!-- No active session: show start form + estimate -->
+        <h3>Start a Parking Session</h3>
         <form method="POST">
             {% csrf_token %}
             <input type="hidden" name="action" value="start">
@@ -47,11 +50,20 @@
             </select>
 
             <label>Parking Lot</label>
-            <select name="lot_id" required style="width:100%;padding:8px;margin-bottom:15px;">
+            <select name="lot_id" id="lotSelect" required style="width:100%;padding:8px;margin-bottom:10px;">
                 {% for l in lots %}
-                    <option value="{{ l.0 }}">{{ l.1 }}</option>
+                    <option value="{{ l.0 }}" data-rate="{{ l.2 }}">
+                        {{ l.1 }} – ${{ l.2 }} / hr
+                    </option>
                 {% endfor %}
             </select>
+
+            <label>Planned Parking Time (hours)</label>
+            <input type="number" name="duration_hours" id="durationHours"
+                   min="0.5" step="0.5" value="1"
+                   style="width:100%;padding:8px;margin-bottom:10px;">
+
+            <p>Estimated cost: <strong>$<span id="costEstimate">0.00</span></strong></p>
 
             <button type="submit" class="button">
                 <i class="fa-solid fa-play"></i> Start Parking
@@ -60,4 +72,34 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function updateEstimate() {
+        const lotSelect = document.getElementById('lotSelect');
+        const durationInput = document.getElementById('durationHours');
+        const estimateSpan = document.getElementById('costEstimate');
+
+        if (!lotSelect || !durationInput || !estimateSpan) return;
+
+        const selectedOption = lotSelect.options[lotSelect.selectedIndex];
+        const rate = parseFloat(selectedOption.getAttribute('data-rate') || '0');
+        const hours = parseFloat(durationInput.value || '0');
+
+        const cost = rate * hours;
+        estimateSpan.textContent = cost.toFixed(2);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const lotSelect = document.getElementById('lotSelect');
+        const durationInput = document.getElementById('durationHours');
+
+        if (lotSelect) lotSelect.addEventListener('change', updateEstimate);
+        if (durationInput) durationInput.addEventListener('input', updateEstimate);
+
+        // Initial calculation
+        updateEstimate();
+    });
+</script>
 {% endblock %}

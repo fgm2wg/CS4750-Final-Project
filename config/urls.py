@@ -1,7 +1,9 @@
+from django.contrib import admin
 from django.urls import path
 from core import views
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("", views.home, name="home"),
     path("login/", views.login, name="login"),
     path("guest-login/", views.guest_login, name="guest_login"),
@@ -12,11 +14,11 @@ urlpatterns = [
     path("change-password/", views.change_password, name="change_password"),
     path("vehicles/", views.vehicles, name="vehicles"),
 
-    # ✅ Keep THEIR routes
+
     path("lot/<int:lot_id>/", views.lot_details, name="lot_details"),
     path("lot/<int:lot_id>/favorite/", views.toggle_favorite, name="toggle_favorite"),
 
-    # ✅ Keep YOUR routes
+
     path("parking/", views.parking_dashboard, name="parking"),
     path("parking/history/", views.parking_history, name="parking_history"),
 ]
