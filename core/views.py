@@ -197,25 +197,29 @@ def guest_login(request):
     guest_email = f"guest_{random_suffix}@guest.local"
     guest_phone = "0000000000"
 
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            INSERT INTO user (first_name, last_name, email, phone_usa, password_hash)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING user_id
-        """, ["Guest", f"Visitor{random_suffix}", guest_email, guest_phone, "GUEST"])
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO user (first_name, last_name, email, phone_usa, password_hash)
+                VALUES (%s, %s, %s, %s, %s)
+            """, ["Guest", f"Visitor{random_suffix}", guest_email, guest_phone, "GUEST"])
 
-        new_user_id = cursor.fetchone()[0]
+            new_user_id = cursor.lastrowid
 
-        cursor.execute("""
-            INSERT INTO visitor (user_id, affiliation_note)
-            VALUES (%s, %s)
-        """, [new_user_id, "Guest access – not a UVA-affiliated account"])
+            cursor.execute("""
+                INSERT INTO visitor (user_id, affiliation_note)
+                VALUES (%s, %s)
+            """, [new_user_id, "Guest access – not a UVA-affiliated account"])
 
-    request.session["user_id"] = new_user_id
-    request.session["user_role"] = "VISITOR"
+        request.session["user_id"] = new_user_id
+        request.session["user_role"] = "VISITOR"
 
-    messages.success(request, "You are logged in as a guest.")
-    return redirect("home")
+        messages.success(request, "You are logged in as a guest.")
+        return redirect("home")
+
+    except Exception as e:
+        messages.error(request, f"Guest login failed: {e}")
+        return redirect("login")
 
 
 def signup(request):
