@@ -12,6 +12,8 @@ def home(request):
         return redirect("login")
 
     search = request.GET.get("search", "").strip().lower()
+    show_fav = request.GET.get("favorites") == "1"
+    user_id = request.session["user_id"]
 
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -23,6 +25,13 @@ def home(request):
         """)
         rows = cursor.fetchall()
 
+    favorites = set()
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT lot_id FROM favorite WHERE user_id=%s
+        """, [user_id])
+        favorites = {row[0] for row in cursor.fetchall()}
+
     lots = []
     for lot_id, name, rate, hours_raw, capacity, zone_name in rows:
         try:
@@ -30,7 +39,7 @@ def home(request):
         except json.JSONDecodeError:
             data = {}
 
-        lots.append({
+        lot = {
             "id": lot_id,
             "name": name,
             "zone": zone_name,
@@ -38,12 +47,21 @@ def home(request):
             "eve_rate": data.get("eve_rate", float(rate)),
             "day_window": data.get("day_window", "07:30-17:00"),
             "capacity": capacity,
-        })
+            "favorite": lot_id in favorites,
+        }
+
+        lots.append(lot)
 
     if search:
         lots = [l for l in lots if search in l["name"].lower()]
 
-    return render(request, "core/home.html", {"lots": lots})
+    if show_fav:
+        lots = [l for l in lots if l["favorite"]]
+
+    return render(request, "core/home.html", {
+        "lots": lots,
+        "show_fav": show_fav,
+    })
 
 
 def lot_details(request, lot_id):
