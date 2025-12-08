@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+
+{% block title %}Lot Details{% endblock %}
+
+{% block content %}
+<h1>{{ lot.name }}</h1>
+<p>Zone: {{ lot.zone }}</p>
+<p>Rate: ${{ lot.rate }}/hr</p>
+<p>Evening Rate: ${{ lot.eve_rate }}/hr</p>
+<p>Hours: {{ lot.day_window }}</p>
+<p>Capacity: {{ lot.capacity }}</p>
+
+<h2>Occupancy Trend</h2>
+<ul>
+    {% for t in trend %}
+    <li>{{ t.0 }}: {{ t.1 }}%</li>
+    {% endfor %}
+</ul>
+
+<h2>Notes</h2>
+<ul>
+    {% for report in reports %}
+    <li>{{ report.0 }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}
