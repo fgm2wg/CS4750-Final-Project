@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}Parking History{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:800px;margin:40px auto;background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+
+    <h2 style="text-align:center;margin-bottom:20px;">Parking History</h2>
+
+    <table style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr style="background:#232d4b;color:white;">
+                <th>Lot</th>
+                <th>Vehicle</th>
+                <th>Plate</th>
+                <th>Start</th>
+                <th>End</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in sessions %}
+            <tr style="background:{% cycle '#ffffff' '#f6f7fb' %};">
+                <td>{{ s.2 }}</td>
+                <td>{{ s.3 }}</td>
+                <td>{{ s.4 }}</td>
+                <td>{{ s.0 }}</td>
+                <td>{{ s.1|default:"—" }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5" style="text-align:center;padding:10px;">No past sessions.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}

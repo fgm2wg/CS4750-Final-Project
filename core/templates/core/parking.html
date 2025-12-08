@@ -1,0 +1,63 @@
+{% extends "core/base.html" %}
+
+{% block title %}Parking - UVA Smart Parking{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px;margin:40px auto;background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+
+    <h2 style="text-align:center;margin-bottom:20px;">Parking</h2>
+
+    {% for message in messages %}
+        <div style="margin-bottom:10px;color:green;font-weight:bold;">
+            {{ message }}
+        </div>
+    {% endfor %}
+
+    {% if active_session %}
+        <div style="margin-bottom:20px;padding:15px;background:#f6f7fb;border-radius:8px;">
+            <p>
+                You are currently parked in
+                <strong>{{ active_session.lot_name }}</strong>
+                with
+                <strong>{{ active_session.vehicle_nickname }}</strong>
+                since
+                <strong>{{ active_session.start_ts }}</strong>
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="end">
+                <input type="hidden" name="session_id" value="{{ active_session.session_id }}">
+                <button type="submit" class="button">
+                    <i class="fa-solid fa-stop"></i> End Parking Session
+                </button>
+            </form>
+        </div>
+
+    {% else %}
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="start">
+
+            <label>Vehicle</label>
+            <select name="vehicle_id" required style="width:100%;padding:8px;margin-bottom:10px;">
+                {% for v in vehicles %}
+                    <option value="{{ v.0 }}">{{ v.6 }} – {{ v.1 }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Parking Lot</label>
+            <select name="lot_id" required style="width:100%;padding:8px;margin-bottom:15px;">
+                {% for l in lots %}
+                    <option value="{{ l.0 }}">{{ l.1 }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="button">
+                <i class="fa-solid fa-play"></i> Start Parking
+            </button>
+        </form>
+    {% endif %}
+
+</div>
+{% endblock %}
