@@ -76,9 +76,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '', # computing_id
-        'USER': '', # computing_id
-        'PASSWORD': '',
+        'NAME': 'fgm2wg', # computing_id
+        'USER': 'fgm2wg', # computing_id
+        'PASSWORD': 'J5iHhEZbvDH6zAV',
         'HOST': 'mysql01.cs.virginia.edu',
         'PORT': '3306',
     }

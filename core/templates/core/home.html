@@ -5,90 +5,182 @@
 {% block extra_head %}
 <style>
     .content {
+        padding: 20px;
+    }
+
+    .filters {
+        margin-bottom: 30px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
         text-align: center;
-        padding: 40px 20px 20px 20px;
     }
 
-    .content h2 {
-        font-size: 2rem;
-        margin-bottom: 20px;
+    .filters-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        position: relative;
     }
 
-    .content p {
-        font-size: 1.2rem;
-        margin: 20px auto;
-        max-width: 600px;
-    }
-
-    .wide-table {
-        width: 95%;
-        margin: 40px auto;
-        border-collapse: collapse;
-        background-color: white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .wide-table th, .wide-table td {
-        border: 1px solid #e0e0e0;
+    .search-input {
+        flex: 1;
+        max-width: 250px;
         padding: 10px;
-        text-align: center;
+        border-radius: 4px;
+        border: 1px solid #ccc;
     }
 
-    .wide-table th {
-        background-color: #232d4b;
-        color: white;
-        font-size: 1rem;
+    .favorites-toggle {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.9rem;
+        white-space: nowrap;
     }
 
-    .wide-table tr:nth-child(even) {
-        background-color: #f6f7fb;
+    .lots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
     }
 
-    .wide-table td {
+    .lot-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .lot-card h3 {
+        margin: 0 0 10px 0;
+        font-size: 1.2rem;
+    }
+
+    .lot-card p {
+        margin: 4px 0;
         font-size: 0.95rem;
     }
 
-    .rate {
+    .lot-card .rate {
         color: #e57200;
         font-weight: bold;
+    }
+
+    .lot-card .buttons {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .lot-card button,
+    .lot-card a.button {
+        flex: 1;
+        padding: 6px;
+        border: none;
+        border-radius: 4px;
+        background-color: #232d4b;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+    .lot-card button.favorite {
+        background-color: #e57200;
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="content">
-    <h2>Welcome!</h2>
-    <p>Find available parking spots across Grounds in real time. Manage permits, view garage occupancy, and plan your trips efficiently.</p>
+    <div class="filters">
+        <div class="filters-title" style="margin-bottom:8px; font-weight:bold;">Filters</div>
+        <div class="filters-row">
+            <input type="text" id="search" placeholder="Search lot name" class="search-input">
 
-    <table class="wide-table">
-        <thead>
-            <tr>
-                <th>Lot Name</th>
-                <th>Hourly Rate ($)</th>
-                <th>Day Rate ($)</th>
-                <th>Day Window</th>
-                <th>Evening Rate ($)</th>
-                <th>Evening Window</th>
-                <th>Day Max</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for lot in lots %}
-            <tr>
-                <td>{{ lot.name }}</td>
-                <td class="rate">{{ lot.rate }}</td>
-                <td>{{ lot.day_rate }}</td>
-                <td>{{ lot.day_window }}</td>
-                <td>{{ lot.eve_rate }}</td>
-                <td>{{ lot.eve_window }}</td>
-                <td>{{ lot.day_max }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7">No lots available</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            <label class="favorites-toggle">
+                <input type="checkbox" id="favorites-only" {% if show_fav %}checked{% endif %}>
+                Favorites Only
+            </label>
+        </div>
+    </div>
+
+    <div class="lots" id="lots-container">
+        {% for lot in lots %}
+        <div class="lot-card" data-name="{{ lot.name|lower }}">
+            <h3>{{ lot.name }} <span style="font-size:0.8em; color:#666;">({{ lot.zone }})</span></h3>
+            <p>Rate: <span class="rate">${{ lot.rate }}/hr</span></p>
+            {% if lot.eve_rate != lot.rate %}
+            <p>Evening Rate: <span class="rate">${{ lot.eve_rate }}/hr</span></p>
+            {% endif %}
+            <p>Hours: {{ lot.day_window }}</p>
+            <p>Capacity: {{ lot.capacity }}</p>
+            <div class="buttons">
+                <a href="{% url 'lot_details' lot.id %}" class="button">View Details</a>
+                {% if lot.favorite %}
+                <button class="favorite" data-lot="{{ lot.id }}">Unfavorite</button>
+                {% else %}
+                <button class="favorite" data-lot="{{ lot.id }}">Favorite</button>
+                {% endif %}
+
+            </div>
+        </div>
+        {% empty %}
+        <p>No lots found</p>
+        {% endfor %}
+    </div>
 </div>
+
+<script>
+    const csrfToken = '{{ csrf_token }}';
+
+    document.getElementById('search').addEventListener('input', () => {
+        applyFilters();
+    });
+
+    document.getElementById('favorites-only').addEventListener('change', () => {
+        const checked = document.getElementById('favorites-only').checked;
+        const param = checked ? "?favorites=1" : "";
+        window.location.href = "/" + param;
+    });
+
+    function applyFilters() {
+        const q = document.getElementById('search').value.toLowerCase();
+        document.querySelectorAll('.lot-card').forEach(card => {
+            const name = card.dataset.name;
+            card.style.display = name.includes(q) ? '' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.favorite').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const lotId = btn.dataset.lot;
+
+            try {
+                const res = await fetch(`/lot/${lotId}/favorite/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                });
+
+                const data = await res.json();
+
+                if (data.favorited === true) {
+                    btn.textContent = "Unfavorite";
+                } else if (data.favorited === false) {
+                    btn.textContent = "Favorite";
+                } else {
+                    alert(data.error || "Failed to update favorite.");
+                }
+            } catch (err) {
+                alert("Error updating favorite.");
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -1,6 +1,7 @@
 import json
 from django.shortcuts import render, redirect
-from django.db import connection
+from django.http import JsonResponse
+from django.db import connection, transaction
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
 import uuid
@@ -10,34 +11,160 @@ def home(request):
     if "user_id" not in request.session:
         return redirect("login")
 
+    search = request.GET.get("search", "").strip().lower()
+    show_fav = request.GET.get("favorites") == "1"
+    user_id = request.session["user_id"]
+
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT name, hourly_rate, hours_json
-            FROM lot
-            ORDER BY name;
+            SELECT l.lot_id, l.name, l.hourly_rate, l.hours_json, l.capacity_int,
+                   z.name AS zone_name
+            FROM lot l
+            JOIN zone z ON l.zone_id = z.zone_id
+            ORDER BY l.name;
         """)
         rows = cursor.fetchall()
 
+    favorites = set()
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT lot_id FROM favorite WHERE user_id=%s
+        """, [user_id])
+        favorites = {row[0] for row in cursor.fetchall()}
+
     lots = []
-    for name, rate, hours_raw in rows:
+    for lot_id, name, rate, hours_raw, capacity, zone_name in rows:
         try:
-            data = json.loads(hours_raw)
-        except (TypeError, json.JSONDecodeError):
+            data = json.loads(hours_raw) if hours_raw else {}
+        except json.JSONDecodeError:
             data = {}
 
-        lot_info = {
+        lot = {
+            "id": lot_id,
             "name": name,
-            "rate": rate,
-            "day_rate": data.get("day_rate", "—"),
-            "day_window": data.get("day_window", "—"),
-            "eve_rate": data.get("eve_rate", data.get("evening_rate", "—")),
-            "eve_window": data.get("eve_window", "—"),
-            "day_max": data.get("day_max", "—"),
-            "day_note": data.get("day_note", "—"),
+            "zone": zone_name,
+            "rate": data.get("day_rate", float(rate)),
+            "eve_rate": data.get("eve_rate", float(rate)),
+            "day_window": data.get("day_window", "07:30-17:00"),
+            "capacity": capacity,
+            "favorite": lot_id in favorites,
         }
-        lots.append(lot_info)
 
-    return render(request, "core/home.html", {"lots": lots})
+        lots.append(lot)
+
+    if search:
+        lots = [l for l in lots if search in l["name"].lower()]
+
+    if show_fav:
+        lots = [l for l in lots if l["favorite"]]
+
+    return render(request, "core/home.html", {
+        "lots": lots,
+        "show_fav": show_fav,
+    })
+
+
+def lot_details(request, lot_id):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT l.name, z.name AS zone_name, l.hourly_rate,
+                   l.hours_json, l.capacity_int
+            FROM lot l
+            JOIN zone z ON l.zone_id = z.zone_id
+            WHERE l.lot_id = %s
+        """, [lot_id])
+        row = cursor.fetchone()
+
+    if not row:
+        messages.error(request, "Lot not found.")
+        return redirect("home")
+
+    name, zone, rate, hours_raw, capacity = row
+
+    try:
+        data = json.loads(hours_raw) if hours_raw else {}
+    except:
+        data = {}
+
+    is_favorite = False
+    if "user_id" in request.session:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 1 FROM favorite
+                WHERE user_id=%s AND lot_id=%s
+                LIMIT 1
+            """, [request.session["user_id"], lot_id])
+            is_favorite = cursor.fetchone() is not None
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT reported_at, fill_pct_int
+            FROM occupancy_report
+            WHERE lot_id=%s
+            ORDER BY reported_at DESC
+            LIMIT 10
+        """, [lot_id])
+        trend = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT note
+            FROM lot_note
+            WHERE lot_id=%s
+        """, [lot_id])
+        reports = cursor.fetchall()
+
+    return render(request, "core/lot_details.html", {
+        "lot": {
+            "id": lot_id,
+            "name": name,
+            "zone": zone,
+            "rate": data.get("day_rate", rate),
+            "eve_rate": data.get("eve_rate", rate),
+            "day_window": data.get("day_window", "07:30-17:00"),
+            "capacity": capacity,
+        },
+        "trend": trend,
+        "reports": reports,
+        "is_favorite": is_favorite
+    })
+
+
+def toggle_favorite(request, lot_id):
+    if "user_id" not in request.session:
+        return JsonResponse({"error": "Not logged in"}, status=403)
+
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method"}, status=405)
+
+    user_id = request.session["user_id"]
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT favorite_id FROM favorite
+                WHERE user_id=%s AND lot_id=%s
+            """, [user_id, lot_id])
+            existing = cursor.fetchone()
+
+            if existing:
+                cursor.execute("""
+                    DELETE FROM favorite
+                    WHERE user_id=%s AND lot_id=%s
+                """, [user_id, lot_id])
+                transaction.commit()
+                return JsonResponse({"favorited": False})
+
+            else:
+                cursor.execute("""
+                    INSERT INTO favorite (user_id, lot_id)
+                    VALUES (%s, %s)
+                """, [user_id, lot_id])
+                transaction.commit()
+                return JsonResponse({"favorited": True})
+
+    except Exception as e:
+        print("TOGGLE FAVORITE ERROR:", e)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 def login(request):
