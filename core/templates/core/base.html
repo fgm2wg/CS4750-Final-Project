@@ -61,8 +61,11 @@
         {% if request.session.user_role != "VISITOR" %}
             <a href="{% url 'vehicles' %}" class="button" title="Vehicles"><i class="fa-solid fa-car"></i></a>
         {% endif %}
+        <a href="{% url 'parking' %}" class="button" title="Parking"><i class="fa-solid fa-square-parking"></i></a>
         <a href="{% url 'profile' %}" class="button" title="Profile"><i class="fa-solid fa-user"></i></a>
         <a href="{% url 'logout' %}" class="button" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+        <a href="{% url 'parking_history' %}" class="button" title="Parking History"><i class="fa-solid fa-clock-rotate-left"></i></a>
+
     </div>
 </div>
 

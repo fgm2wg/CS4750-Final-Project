@@ -328,3 +328,107 @@ def vehicles(request):
         "modal_open": modal_open,
         "vehicle_to_edit": vehicle_to_edit
     })
+
+
+def parking_dashboard(request):
+    if "user_id" not in request.session:
+        return redirect("login")
+
+    user_id = request.session["user_id"]
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "start":
+            lot_id = request.POST.get("lot_id")
+            vehicle_id = request.POST.get("vehicle_id")
+
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                        INSERT INTO parking_session (user_id, vehicle_id, lot_id, start_ts, end_ts)
+                        VALUES (%s, %s, %s, NOW(), NULL)
+                    """, [user_id, vehicle_id, lot_id])
+
+            messages.success(request, "Parking session started.")
+            return redirect("parking")
+
+        elif action == "end":
+            session_id = request.POST.get("session_id")
+
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                        UPDATE parking_session
+                        SET end_ts = NOW()
+                        WHERE session_id = %s AND user_id = %s AND end_ts IS NULL
+                    """, [session_id, user_id])
+
+            messages.success(request, "Parking session ended.")
+            return redirect("parking")
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+                SELECT vehicle_id, plate, state, make, model, color, nickname
+                FROM vehicle
+                WHERE user_id = %s
+            """, [user_id])
+        vehicles = cursor.fetchall()
+
+        cursor.execute("""
+                SELECT lot_id, name, hourly_rate
+                FROM lot
+                ORDER BY name
+            """)
+        lots = cursor.fetchall()
+
+        cursor.execute("""
+                SELECT s.session_id, s.start_ts, l.name, v.nickname
+                FROM parking_session s
+                JOIN lot l ON s.lot_id = l.lot_id
+                JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+                WHERE s.user_id = %s
+                  AND s.start_ts IS NOT NULL
+                  AND s.end_ts IS NULL
+                ORDER BY s.start_ts DESC
+                LIMIT 1
+            """, [user_id])
+        row = cursor.fetchone()
+
+    active_session = None
+    if row:
+        active_session = {
+            "session_id": row[0],
+            "start_ts": row[1],
+            "lot_name": row[2],
+            "vehicle_nickname": row[3],
+        }
+
+    return render(request, "core/parking.html", {
+        "vehicles": vehicles,
+        "lots": lots,
+        "active_session": active_session,
+    })
+
+
+def parking_history(request):
+    if "user_id" not in request.session:
+        return redirect("login")
+
+    user_id = request.session["user_id"]
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+                SELECT s.start_ts, s.end_ts,
+                       l.name AS lot_name,
+                       v.nickname, v.plate
+                FROM parking_session s
+                JOIN lot l ON s.lot_id = l.lot_id
+                JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+                WHERE s.user_id = %s
+                ORDER BY s.start_ts DESC
+            """, [user_id])
+
+        sessions = cursor.fetchall()
+
+    return render(request, "core/parking_history.html", {
+        "sessions": sessions
+    })
