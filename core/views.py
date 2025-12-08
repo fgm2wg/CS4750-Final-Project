@@ -201,9 +201,10 @@ def guest_login(request):
         cursor.execute("""
             INSERT INTO user (first_name, last_name, email, phone_usa, password_hash)
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING user_id
         """, ["Guest", f"Visitor{random_suffix}", guest_email, guest_phone, "GUEST"])
 
-        new_user_id = cursor.lastrowid
+        new_user_id = cursor.fetchone()[0]
 
         cursor.execute("""
             INSERT INTO visitor (user_id, affiliation_note)

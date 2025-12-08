@@ -14,7 +14,6 @@
     {% endfor %}
 
     {% if active_session %}
-        <!-- Show current active session -->
         <div style="margin-bottom:20px;padding:15px;background:#f6f7fb;border-radius:8px;">
             <p>
                 You are currently parked in
@@ -36,7 +35,6 @@
         </div>
 
     {% else %}
-        <!-- No active session: show start form + estimate -->
         <h3>Start a Parking Session</h3>
         <form method="POST">
             {% csrf_token %}
@@ -98,7 +96,6 @@
         if (lotSelect) lotSelect.addEventListener('change', updateEstimate);
         if (durationInput) durationInput.addEventListener('input', updateEstimate);
 
-        // Initial calculation
         updateEstimate();
     });
 </script>
