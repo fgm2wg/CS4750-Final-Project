@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.db import connection, transaction
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
+from datetime import datetime
 import uuid
 
 
@@ -471,58 +472,53 @@ def parking_dashboard(request):
     if request.method == "POST":
         action = request.POST.get("action")
 
-        if action == "start":
-            lot_id = request.POST.get("lot_id")
-            vehicle_id = request.POST.get("vehicle_id")
-
+        try:
             with connection.cursor() as cursor:
-                cursor.execute("""
-                        INSERT INTO parking_session (user_id, vehicle_id, lot_id, start_ts, end_ts)
-                        VALUES (%s, %s, %s, NOW(), NULL)
-                    """, [user_id, vehicle_id, lot_id])
+                if action == "start":
+                    lot_id = request.POST.get("lot_id")
+                    vehicle_id = request.POST.get("vehicle_id")
+                    start_ts = datetime.now()
+                    cursor.callproc("sp_start_session", [user_id, vehicle_id, lot_id, start_ts])
+                    messages.success(request, "Parking session started.")
 
-            messages.success(request, "Parking session started.")
+                elif action == "end":
+                    session_id = request.POST.get("session_id")
+                    end_ts = datetime.now()
+                    cursor.callproc("sp_end_session", [session_id, end_ts])
+                    messages.success(request, "Parking session ended.")
+
             return redirect("parking")
 
-        elif action == "end":
-            session_id = request.POST.get("session_id")
-
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                        UPDATE parking_session
-                        SET end_ts = NOW()
-                        WHERE session_id = %s AND user_id = %s AND end_ts IS NULL
-                    """, [session_id, user_id])
-
-            messages.success(request, "Parking session ended.")
+        except Exception as e:
+            messages.error(request, f"Parking session error: {e}")
             return redirect("parking")
 
     with connection.cursor() as cursor:
         cursor.execute("""
-                SELECT vehicle_id, plate, state, make, model, color, nickname
-                FROM vehicle
-                WHERE user_id = %s
-            """, [user_id])
+            SELECT vehicle_id, plate, state, make, model, color, nickname
+            FROM vehicle
+            WHERE user_id = %s
+        """, [user_id])
         vehicles = cursor.fetchall()
 
         cursor.execute("""
-                SELECT lot_id, name, hourly_rate
-                FROM lot
-                ORDER BY name
-            """)
+            SELECT lot_id, name, hourly_rate
+            FROM lot
+            ORDER BY name
+        """)
         lots = cursor.fetchall()
 
         cursor.execute("""
-                SELECT s.session_id, s.start_ts, l.name, v.nickname
-                FROM parking_session s
-                JOIN lot l ON s.lot_id = l.lot_id
-                JOIN vehicle v ON s.vehicle_id = v.vehicle_id
-                WHERE s.user_id = %s
-                  AND s.start_ts IS NOT NULL
-                  AND s.end_ts IS NULL
-                ORDER BY s.start_ts DESC
-                LIMIT 1
-            """, [user_id])
+            SELECT s.session_id, s.start_ts, l.name, v.nickname
+            FROM parking_session s
+            JOIN lot l ON s.lot_id = l.lot_id
+            JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+            WHERE s.user_id = %s
+              AND s.start_ts IS NOT NULL
+              AND s.end_ts IS NULL
+            ORDER BY s.start_ts DESC
+            LIMIT 1
+        """, [user_id])
         row = cursor.fetchone()
 
     active_session = None
